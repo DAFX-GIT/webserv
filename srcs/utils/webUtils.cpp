@@ -1,4 +1,4 @@
-#include "../webserv.h"
+#include "webUtils.h"
 #include "../error/error.hpp"
 
 std::string getAbsolutePath(const std::string& configPath) {

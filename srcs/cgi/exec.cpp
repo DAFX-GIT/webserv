@@ -1,5 +1,59 @@
-#include "../webserv.h"
+#include "cgi.h"
 #include "../error/error.hpp"
+#include "../class/Response.hpp"
+#include "../utils/webUtils.h"
+
+void ft_parse_line_header(std::string line, std::map<std::string, std::string> &maps)
+{
+	size_t pos = line.find(":");
+
+	if (pos == std::string::npos)
+		return;
+	maps[line.substr(0, pos)] = line.substr(pos + 1);
+}
+
+void cgi_response(Client *curClient)
+{
+	size_t len = 4;
+	size_t pos = curClient->cgi_buffer.find("\r\n\r\n");
+
+	if (pos == std::string::npos)
+	{
+		pos = curClient->cgi_buffer.find("\n\n");
+		len = 2;
+	}
+
+	int status = 200;
+	std::string status_str = "OK";
+	Response response;
+
+	if (!curClient->cgi_buffer.empty())
+	{
+		std::string cgi_headers = curClient->cgi_buffer.substr(0, pos);
+		std::string cgi_body = curClient->cgi_buffer.substr(pos + len);
+		std::stringstream ss(cgi_headers);
+		std::string line;
+		std::map<std::string, std::string> cgi_headers_map;
+		while (std::getline(ss, line))
+			ft_parse_line_header(line, cgi_headers_map);
+		for (std::map<std::string, std::string>::iterator it = cgi_headers_map.begin(); it != cgi_headers_map.end(); it++)
+		{
+			if (it->first == "Status" || it->first == "status")
+			{
+				status = atoi(it->second.c_str());
+				if (it->second.size() > 4)
+					status_str = it->second.substr(4);
+			}
+			else
+				response.addHeader(it->first, it->second);
+		}
+		response.setBody(cgi_body);
+	}
+	response.setProtocol(curClient->http.getProtocol());
+	response.setStatus(status);
+	response.setStatus(status_str);
+	curClient->oBuffer.append(response.getResponse());
+}
 
 void execCgi(Connection *connect, Client *curClient, Location *loc)
 {

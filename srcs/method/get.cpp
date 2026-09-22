@@ -1,4 +1,5 @@
 #include "method.h"
+#include "../utils/webUtils.h"
 
 void	getEveryFile(std::string base_location, std::string location, std::vector<std::string> &files, std::string prefix)
 {

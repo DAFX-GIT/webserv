@@ -1,6 +1,7 @@
 #include "error.hpp"
 #include "../class/Response.hpp"
 #include "../method/method.h"
+#include "../utils/webUtils.h"
 
 std::string generateDefaultErrorPage(int code, const std::string &message)
 {

@@ -1,5 +1,7 @@
 #include "method.h"
 #include "../class/Response.hpp"
+#include "../cgi/cgi.h"
+#include "../utils/webUtils.h"
 
 std::string getMineType(const std::string& path) {
 	size_t idx = path.find_last_of('.');

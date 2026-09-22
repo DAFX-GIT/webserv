@@ -1,4 +1,5 @@
 #include "../webserv.h"
+#include "../utils/webUtils.h"
 
 int initServ(string port) {
 	int status;

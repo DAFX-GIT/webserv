@@ -181,12 +181,6 @@ struct Config {
 
 extern Config conf;
 
-std::string getAbsolutePath(const std::string& configPath);
-std::string getBinaryDirectory();
-std::string getMineType(const std::string& path);
-bool isPathSafe(string target, Client* curClient, Location *loc);
-void execCgi(Connection* connect, Client* curClient, Location* loc);
-int make_socket_non_blocking (int sockfd);
 void process(Connection* connect, Client* curClient);
 int initServ(string port);
 void serv(vector<int>& sockfds);

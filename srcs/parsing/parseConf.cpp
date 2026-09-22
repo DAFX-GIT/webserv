@@ -1,4 +1,5 @@
 #include "../webserv.h"
+#include "../utils/webUtils.h"
 
 bool compareLocationLength(const Location *a, const Location *b)
 {
@@ -98,25 +99,14 @@ bool ft_check_method(std::string method)
 	return (0);
 }
 
-int Config::parseConf(const std::string &filename)
+int checkBraceBalance(std::ifstream &file2)
 {
-	std::ifstream file(filename.c_str());
-	std::ifstream file2(filename.c_str());
-	if (!file.is_open())
-	{
-		std::cerr << "Webserv: Error: could not open config file " << filename << std::endl;
-		return (1);
-	}
-
 	std::string line;
-	ServerConfig *currentServer = NULL;
-	string bin_path = getBinaryDirectory();
-	conf._bin_path = bin_path;
-
 	int braceCount = 0;
 	int nb_line = 0;
 	string first_brace = "";
 	int first_brace_line = 0;
+
 	while (braceCount >= 0 && getline(file2, line))
 	{
 		nb_line++;
@@ -147,14 +137,278 @@ int Config::parseConf(const std::string &filename)
 			std::cerr << "Webserv: line " << first_brace_line << ": " << first_brace << ": invalid format" << endl;
 		return (1);
 	}
+	return (0);
+}
 
-	nb_line = 0;
+void parseCgiAssignBlock(std::ifstream &file, std::map<std::string, std::string> &interpreters, int &nb_line)
+{
+	std::string line;
+
+	while (getline(file, line))
+	{
+		nb_line++;
+		stringstream ss3(line);
+		std::string token;
+
+		ss3 >> token;
+		if (token.empty() || token[0] == '#')
+			continue;
+		if (token == "}")
+			break;
+		ft_parse_line(line, interpreters, 2);
+	}
+}
+
+Location *parseLocationBlock(std::ifstream &file, const std::string &prefix, int &nb_line, bool &error)
+{
+	Location *newLoc = new Location();
+	newLoc->prefix = prefix;
+	string bin_path = getBinaryDirectory();
+	std::string line;
+
+	while (getline(file, line))
+	{
+		nb_line++;
+		stringstream ss2(line);
+		string locKey, locValue, locValue2, locValue3;
+
+		ss2 >> locKey >> locValue >> locValue2 >> locValue3;
+
+		if (locKey == "}")
+			break;
+		if (locKey == "root")
+		{
+			if (locValue[0] == '.')
+			{
+				locValue.erase(0, 2);
+				locValue = bin_path + locValue;
+			}
+			newLoc->root = locValue;
+		}
+		else if (locKey == "index")
+		{
+			newLoc->index = locValue;
+			if (!locValue2.empty())
+			{
+				cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+				error = true;
+				return (newLoc);
+			}
+		}
+		else if (locKey == "autoindex")
+		{
+			newLoc->autoindex = (locValue == "YES");
+			if (!locValue2.empty())
+			{
+				cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+				error = true;
+				return (newLoc);
+			}
+		}
+		else if (locKey == "upload_dir")
+		{
+			if (locValue[0] == '.')
+			{
+				locValue.erase(0, 2);
+				locValue = bin_path + locValue;
+			}
+			newLoc->upload_dir = locValue;
+			if (!locValue2.empty())
+			{
+				cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+				error = true;
+				return (newLoc);
+			}
+		}
+		else if (locKey == "isCgi")
+		{
+			newLoc->isCgi = (locValue == "YES");
+			if (!locValue2.empty())
+			{
+				cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+				error = true;
+				return (newLoc);
+			}
+		}
+		else if (locKey == "allowed_methods")
+		{
+			if (ft_check_method(locValue) || ft_check_method(locValue2) || ft_check_method(locValue3))
+			{
+				cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": unknown method" << endl;
+				error = true;
+				return (newLoc);
+			}
+			newLoc->methods.insert(locValue);
+			newLoc->methods.insert(locValue2);
+			newLoc->methods.insert(locValue3);
+			while (ss2 >> locValue)
+			{
+				if (ft_check_method(locValue))
+				{
+					cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": unknown method" << endl;
+					error = true;
+					return (newLoc);
+				}
+				newLoc->methods.insert(locValue);
+			}
+		}
+		else if (locKey == "return" && !newLoc->redirection)
+		{
+			newLoc->redirection = 1;
+			newLoc->redirection_vec.push_back(locValue);
+			newLoc->redirection_vec.push_back(locValue2);
+			if (!locValue3.empty())
+			{
+				cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+				error = true;
+				return (newLoc);
+			}
+		}
+		else if (locKey == "cgi_assign")
+		{
+			if (!locValue2.empty())
+			{
+				cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+				error = true;
+				return (newLoc);
+			}
+			parseCgiAssignBlock(file, newLoc->cgi_interpreters, nb_line);
+		}
+		else if (locKey == "isUploadable")
+		{
+			if (!locValue2.empty())
+			{
+				cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+				error = true;
+				return (newLoc);
+			}
+			if (locValue == "YES")
+				newLoc->isUploadable = 1;
+		}
+	}
+	return (newLoc);
+}
+
+int parseServerBlock(std::ifstream &file, ServerConfig &server, int &nb_line, const std::string &key,
+					  const std::string &value, const std::string &value2, const std::string &value3,
+					  const std::string &line, std::stringstream &ss)
+{
+	if (key == "port")
+	{
+		server._port = value.c_str();
+		if (ft_check_port(server._port))
+		{
+			cerr << "Webserv: " << server._port << ": invalid or missing port" << endl;
+			return (1);
+		}
+		if (!value2.empty())
+		{
+			cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+			return (1);
+		}
+	}
+	else if (key == "server_name")
+	{
+		server._server_name = value;
+		if (!ft_check_server_name(server._server_name))
+		{
+			cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+			return (1);
+		}
+		if (!value2.empty())
+		{
+			cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+			return (1);
+		}
+	}
+	else if (key == "error_page")
+	{
+		std::string errLine;
+		std::string line_value;
+		errLine += value;
+		errLine += " " + value2;
+		errLine += " " + value3;
+		while (ss >> line_value)
+			errLine += " " + line_value;
+		ft_parse_error(errLine, conf._error);
+	}
+	else if (key == "location")
+	{
+		if (!value3.empty())
+		{
+			cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+			return (1);
+		}
+		int serverNb = 0;
+		bool isDuplicate = false;
+		for (size_t i = 0; i < server._locations.size(); i++)
+		{
+			if (conf._servers[serverNb]._locations[i]->prefix == value)
+			{
+				cerr << "Location: " << value << ": already configured. Skipping..." << endl;
+				isDuplicate = true;
+				break;
+			}
+		}
+		if (isDuplicate)
+		{
+			std::string skipLine;
+			int braceCount = 1;
+			while (braceCount > 0 && getline(file, skipLine))
+			{
+				nb_line++;
+				stringstream skip(skipLine);
+				string token;
+				while (skip >> token)
+				{
+					if (token == "{")
+						braceCount++;
+					else if (token == "}")
+						braceCount--;
+				}
+			}
+			return (0);
+		}
+		bool locError = false;
+		Location *newLoc = parseLocationBlock(file, value, nb_line, locError);
+		if (locError)
+			return (1);
+		server._locations.push_back(newLoc);
+		std::sort(server._locations.begin(), server._locations.end(), compareLocationLength);
+		server._nbofLocations++;
+	}
+	else if (key != "{" && key != "}")
+	{
+		cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+		return (1);
+	}
+	return (0);
+}
+
+int Config::parseConf(const std::string &filename)
+{
+	std::ifstream file(filename.c_str());
+	std::ifstream file2(filename.c_str());
+	if (!file.is_open())
+	{
+		std::cerr << "Webserv: Error: could not open config file " << filename << std::endl;
+		return (1);
+	}
+
+	if (checkBraceBalance(file2))
+		return (1);
+
+	std::string line;
+	ServerConfig *currentServer = NULL;
+	string bin_path = getBinaryDirectory();
+	conf._bin_path = bin_path;
+
+	int nb_line = 0;
 	while (std::getline(file, line))
 	{
 		nb_line++;
 		std::stringstream ss(line);
 		std::string key, value, value2, value3;
-		int serverNb = 0;
 		ss >> key >> value >> value2 >> value3;
 		if (key.empty() || key[0] == '#')
 			continue;
@@ -167,7 +421,7 @@ int Config::parseConf(const std::string &filename)
 			_max_clients = 64;
 		if (_max_clients == 0)
 			_max_clients = 64;
-		
+
 		if (key == "types_path")
 		{
 			if (value[0] == '.')
@@ -199,218 +453,8 @@ int Config::parseConf(const std::string &filename)
 		}
 		else if (currentServer != NULL)
 		{
-			if (key == "port")
-			{
-				currentServer->_port = value.c_str();
-				if (ft_check_port(currentServer->_port))
-				{
-					cerr << "Webserv: " << currentServer->_port << ": invalid or missing port" << endl;
-					return (1);
-				}
-				if (!value2.empty())
-				{
-					cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
-					return (1);
-				}
-			}
-			else if (key == "server_name")
-			{
-				currentServer->_server_name = value;
-				if (!ft_check_server_name(currentServer->_server_name))
-				{
-					cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
-					return (1);
-				}
-				if (!value2.empty())
-				{
-					cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
-					return (1);
-				}
-			}
-			else if (key == "error_page")
-			{
-				std::string line;
-				std::string line_value;
-				line += value;
-				line += " " + value2;
-				line += " " + value3;
-				while (ss >> line_value)
-					line += " " + line_value;
-				ft_parse_error(line, conf._error);
-			}
-			else if (key == "location")
-			{
-				Location *newLoc = new Location();
-
-				if (!value3.empty())
-				{
-					cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
-					return (1);
-				}
-				bool isDuplicate = false;
-				for (size_t i = 0; i < currentServer->_locations.size(); i++)
-				{
-					if (conf._servers[serverNb]._locations[i]->prefix == value)
-					{
-						cerr << "Location: " << value << ": already configured. Skipping..." << endl;
-						isDuplicate = true;
-						break;
-					}
-				}
-				if (isDuplicate)
-				{
-					delete newLoc;
-
-					int braceCount = 1;
-					while (braceCount > 0 && getline(file, line))
-					{
-						nb_line++;
-						stringstream skip(line);
-						string token;
-						while (skip >> token)
-						{
-							if (token == "{")
-								braceCount++;
-							else if (token == "}")
-								braceCount--;
-						}
-					}
-					continue;
-				}
-				newLoc->prefix = value;
-				while (getline(file, line))
-				{
-					nb_line++;
-					stringstream ss2(line);
-					string locKey, locValue, locValue2, locValue3;
-
-					ss2 >> locKey >> locValue >> locValue2 >> locValue3;
-
-					if (locKey == "}")
-						break;
-					if (locKey == "root")
-					{
-						if (locValue[0] == '.')
-						{
-							locValue.erase(0, 2);
-							locValue = bin_path + locValue;
-						}
-						newLoc->root = locValue;
-					}
-					else if (locKey == "index")
-					{
-						newLoc->index = locValue;
-						if (!locValue2.empty())
-						{
-							cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
-							return (1);
-						}
-					}
-					else if (locKey == "autoindex")
-					{
-						newLoc->autoindex = (locValue == "YES");
-						if (!locValue2.empty())
-						{
-							cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
-							return (1);
-						}
-					}
-					else if (locKey == "upload_dir")
-					{
-						if (locValue[0] == '.')
-						{
-							locValue.erase(0, 2);
-							locValue = bin_path + locValue;
-						}
-						newLoc->upload_dir = locValue;
-						if (!locValue2.empty())
-						{
-							cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
-							return (1);
-						}
-					}
-					else if (locKey == "isCgi")
-					{
-						newLoc->isCgi = (locValue == "YES");
-						if (!locValue2.empty())
-						{
-							cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
-							return (1);
-						}
-					}
-					else if (locKey == "allowed_methods")
-					{
-						if (ft_check_method(locValue) || ft_check_method(locValue2) || ft_check_method(locValue3))
-						{
-							cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": unknown method" << endl;
-							return (1);
-						}
-						newLoc->methods.insert(locValue);
-						newLoc->methods.insert(locValue2);
-						newLoc->methods.insert(locValue3);
-						while (ss2 >> locValue)
-						{
-							if (ft_check_method(locValue))
-							{
-								cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": unknown method" << endl;
-								return (1);
-							}
-							newLoc->methods.insert(locValue);
-						}
-					}
-					else if (locKey == "return" && !newLoc->redirection)
-					{
-						newLoc->redirection = 1;
-						newLoc->redirection_vec.push_back(locValue);
-						newLoc->redirection_vec.push_back(locValue2);
-						if (!locValue3.empty())
-						{
-							cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
-							return (1);
-						}
-					}
-					else if (locKey == "cgi_assign")
-					{
-						if (!locValue2.empty())
-						{
-							cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
-							return (1);
-						}
-						while (getline(file, line))
-						{
-							nb_line++;
-							stringstream ss3(line);
-							std::string token;
-
-							ss3 >> token;
-							if (token.empty() || token[0] == '#')
-								continue;
-							if (token == "}")
-								break;
-							ft_parse_line(line, newLoc->cgi_interpreters, 2);
-						}
-					}
-					else if (locKey == "isUploadable")
-					{
-						if (!locValue2.empty())
-						{
-							cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
-							return (1);
-						}
-						if (locValue == "YES")
-							newLoc->isUploadable = 1;
-					}
-				}
-				currentServer->_locations.push_back(newLoc);
-				std::sort(currentServer->_locations.begin(), currentServer->_locations.end(), compareLocationLength);
-				currentServer->_nbofLocations++;
-			}
-			else if (key != "{" && key != "}")
-			{
-				cerr << "Webserv: " << "line " << nb_line << ": " << line.substr(line.find_first_not_of("\t ")) << ": invalid format" << endl;
+			if (parseServerBlock(file, *currentServer, nb_line, key, value, value2, value3, line, ss))
 				return (1);
-			}
-			serverNb++;
 		}
 		else if (key != "{" && key != "}")
 		{

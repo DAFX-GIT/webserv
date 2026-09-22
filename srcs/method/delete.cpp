@@ -1,4 +1,5 @@
 #include "method.h"
+#include "../utils/webUtils.h"
 
 void handleDelete(Client* curClient, Location* loc)
 {
