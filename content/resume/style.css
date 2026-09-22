@@ -1,0 +1,49 @@
+/* Configuration de la page */
+@page { 
+    margin: 2cm; 
+}
+
+/* Le conteneur principal centré */
+body {
+    font-family: 'Courier New', Courier, monospace;
+    line-height: 1.4;
+    color: #333;
+    max-width: 800px;
+    margin: 0 auto; /* Centrage horizontal corrigé */
+    padding: 20px;
+    font-size: 13px;
+}
+
+/* Style 42 - Rétabli */
+h1, h2 {
+    color: #00babc;
+    border-bottom: 2px solid #00babc;
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+.header-table {
+    width: 100%;
+    border: none;
+    margin-bottom: 10px;
+}
+
+.skills-box {
+    font-size: 12px;
+    margin-top: 8px;
+    line-height: 1.3;
+    border-left: 3px solid #00babc;
+    padding-left: 12px;
+    color: #444;
+}
+
+/* Fix pour les listes */
+ul {
+    margin-top: 5px;
+}
+
+li {
+    margin-bottom: 3px;
+}
+
+a { color: #00babc; text-decoration: none; }

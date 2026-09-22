@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Creator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f5f5f5;
+            margin: 0;
+        }
+
+        button {
+            font-size: 24px;
+            padding: 20px 40px;
+            border: none;
+            border-radius: 12px;
+            background: #d2691e;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .create {
+            background: #d2691e;
+        }
+
+        .create:hover {
+            background: #b85d1a;
+            transform: scale(1.05);
+        }
+
+        .kill {
+            background: #555;
+        }
+
+        .kill:hover {
+            background: #333;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body>
+    <form action="/cookie" method="GET">
+        <button class="create" type="submit">🍪 Create cookie</button>
+    </form>
+    <form action="/killcookie" method="POST">
+        <button class="kill" type="submit">😢 Kill Cookie</button>
+    </form>
+</body>
+
+
+<!DOCTYPE html>
+</html>

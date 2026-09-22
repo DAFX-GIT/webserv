@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1e1e2f;
+        }
+
+        .register-container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .register-container h1 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .register-btn {
+            width: 100%;
+            padding: 12px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .footer a {
+            color: #4f46e5;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="register-container">
+
+    <h1>Inscription</h1>
+
+    <form action="/site/actions/register.php" method="POST">
+
+        <div class="input-group">
+            <label for="username">Nom d'utilisateur</label>
+            <input
+                type="text"
+                id="username"
+                name="username"
+                required>
+        </div>
+
+        <div class="input-group">
+            <label for="password">Mot de passe</label>
+            <input
+                type="password"
+                id="password"
+                name="password"
+                required>
+        </div>
+
+        <button type="submit" class="register-btn">
+            Créer un compte
+        </button>
+
+    </form>
+
+    <div class="footer">
+        Déjà inscrit ?
+        <a href="/site/login.html">Se connecter</a>
+    </div>
+
+</div>
+
+</body>
+</html>

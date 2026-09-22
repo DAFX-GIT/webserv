@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #1e1e2f;
+            color: white;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #27293d;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #ef4444;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        .welcome-card,
+        .feature-card {
+            background: #27293d;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .welcome-card h2 {
+            margin-bottom: 10px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: #cbd5e1;
+        }
+
+        .upload-form {
+            margin-top: 20px;
+        }
+
+        .upload-form input[type="file"] {
+            margin-bottom: 10px;
+        }
+
+        .upload-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #10b981;
+            color: white;
+            cursor: pointer;
+        }
+
+        .upload-btn:hover {
+            background: #059669;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Webserv Dashboard</h1>
+
+    <form action="/site/actions/logout.php" method="POST">
+        <button class="logout-btn" type="submit">
+            Déconnexion
+        </button>
+    </form>
+</header>
+
+<main>
+
+    <div class="welcome-card">
+		<h2 id="welcome">Bienvenue 👋</h2>
+		<script>
+		fetch('/site/actions/me.php')
+		    .then(res => res.json())
+		    .then(data => {
+		        console.log(data);
+			
+		        document.getElementById('welcome').textContent =
+		            `Bienvenue, ${data.username} 👋`;
+		    })
+		    .catch(err => console.error(err));
+		</script>
+        <p>
+            Vous êtes connecté avec succès à votre session.
+        </p>
+    </div>
+
+    <div class="cards">
+
+        <div class="feature-card">
+            <h3>Session</h3>
+            <p>
+                Cette page est accessible uniquement aux utilisateurs connectés.
+            </p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Cookies</h3>
+            <p>
+                Vérifiez que votre cookie de session est correctement envoyé.
+            </p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Upload</h3>
+
+            <form
+                class="upload-form"
+                action="/uploads/uploads"
+                method="POST"
+                enctype="multipart/form-data">
+
+                <input type="file" name="file" required>
+                <br>
+
+                <button class="upload-btn" type="submit">
+                    Envoyer un fichier
+                </button>
+
+            </form>
+        </div>
+
+    </div>
+
+</main>
+
+</body>
+</html>
